@@ -11,16 +11,157 @@
     "deleteRule": null,
     "authRule": "",
     "manageRule": null,
-    "passwordAuth": { "enabled": true, "identityFields": ["email"] },
-    "oauth2": { "enabled": false },
-    "otp": { "enabled": false },
-    "mfa": { "enabled": false },
+    "oauth2": {
+      "enabled": false,
+      "mappedFields": {
+        "id": "",
+        "name": "",
+        "username": "",
+        "avatarURL": ""
+      },
+      "providers": []
+    },
+    "passwordAuth": {
+      "enabled": true,
+      "identityFields": [
+        "email"
+      ]
+    },
+    "mfa": {
+      "enabled": false,
+      "duration": 1800,
+      "rule": ""
+    },
+    "otp": {
+      "enabled": false,
+      "duration": 180,
+      "length": 8
+    },
+    "authToken": {
+      "duration": 1209600
+    },
+    "passwordResetToken": {
+      "duration": 1800
+    },
+    "emailChangeToken": {
+      "duration": 1800
+    },
+    "verificationToken": {
+      "duration": 259200
+    },
+    "fileToken": {
+      "duration": 180
+    },
     "fields": [
-      { "name": "name", "type": "text", "required": false, "max": 80 },
-      { "name": "created", "type": "autodate", "onCreate": true, "onUpdate": false },
-      { "name": "updated", "type": "autodate", "onCreate": true, "onUpdate": true }
+      {
+        "id": "text3208210256",
+        "name": "id",
+        "type": "text",
+        "required": true,
+        "system": true,
+        "hidden": false,
+        "presentable": false,
+        "primaryKey": true,
+        "min": 15,
+        "max": 15,
+        "pattern": "^[a-z0-9]+$",
+        "autogeneratePattern": "[a-z0-9]{15}"
+      },
+      {
+        "id": "password901924565",
+        "name": "password",
+        "type": "password",
+        "required": true,
+        "system": true,
+        "hidden": true,
+        "presentable": false,
+        "min": 8,
+        "max": 0,
+        "pattern": "",
+        "cost": 0
+      },
+      {
+        "id": "text2504183744",
+        "name": "tokenKey",
+        "type": "text",
+        "required": true,
+        "system": true,
+        "hidden": true,
+        "presentable": false,
+        "primaryKey": false,
+        "min": 30,
+        "max": 60,
+        "pattern": "",
+        "autogeneratePattern": "[a-zA-Z0-9]{50}"
+      },
+      {
+        "id": "email3885137012",
+        "name": "email",
+        "type": "email",
+        "required": true,
+        "system": true,
+        "hidden": false,
+        "presentable": false,
+        "exceptDomains": null,
+        "onlyDomains": null
+      },
+      {
+        "id": "bool1547992806",
+        "name": "emailVisibility",
+        "type": "bool",
+        "required": false,
+        "system": true,
+        "hidden": false,
+        "presentable": false
+      },
+      {
+        "id": "bool256245529",
+        "name": "verified",
+        "type": "bool",
+        "required": false,
+        "system": true,
+        "hidden": false,
+        "presentable": false
+      },
+      {
+        "id": "text_editor_name",
+        "name": "name",
+        "type": "text",
+        "required": false,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "min": 0,
+        "max": 80,
+        "pattern": "",
+        "autogeneratePattern": "",
+        "primaryKey": false
+      },
+      {
+        "id": "autodate_created",
+        "name": "created",
+        "type": "autodate",
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "onCreate": true,
+        "onUpdate": false
+      },
+      {
+        "id": "autodate_updated",
+        "name": "updated",
+        "type": "autodate",
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "onCreate": true,
+        "onUpdate": true
+      }
     ],
-    "indexes": []
+    "indexes": [
+      "CREATE UNIQUE INDEX `idx_tokenKey_pbc_pulse_editors` ON `pulse_editors` (`tokenKey`)",
+      "CREATE UNIQUE INDEX `idx_email_pbc_pulse_editors` ON `pulse_editors` (`email`) WHERE `email` != ''"
+    ]
   },
   {
     "id": "pbc_pulse_apps",
@@ -33,19 +174,167 @@
     "updateRule": "@request.auth.collectionName = \"pulse_editors\"",
     "deleteRule": "@request.auth.collectionName = \"pulse_editors\"",
     "fields": [
-      { "name": "name", "type": "text", "required": true, "presentable": true, "max": 80 },
-      { "name": "slug", "type": "text", "required": true, "max": 80, "pattern": "^[a-z0-9-]+$" },
-      { "name": "tagline", "type": "text", "max": 160 },
-      { "name": "accent", "type": "text", "required": true, "max": 7, "pattern": "^#[0-9a-fA-F]{6}$" },
-      { "name": "store_id", "type": "text", "max": 40 },
-      { "name": "status", "type": "select", "required": true, "maxSelect": 1, "values": ["unknown", "operational", "degraded", "partial_outage", "major_outage", "maintenance"] },
-      { "name": "status_message", "type": "text", "max": 280 },
-      { "name": "sort", "type": "number", "onlyInt": true },
-      { "name": "visible", "type": "bool" },
-      { "name": "created", "type": "autodate", "onCreate": true, "onUpdate": false },
-      { "name": "updated", "type": "autodate", "onCreate": true, "onUpdate": true }
+      {
+        "id": "text3208210256",
+        "name": "id",
+        "type": "text",
+        "required": true,
+        "system": true,
+        "hidden": false,
+        "presentable": false,
+        "primaryKey": true,
+        "min": 15,
+        "max": 15,
+        "pattern": "^[a-z0-9]+$",
+        "autogeneratePattern": "[a-z0-9]{15}"
+      },
+      {
+        "id": "text_app_name",
+        "name": "name",
+        "type": "text",
+        "required": true,
+        "system": false,
+        "hidden": false,
+        "presentable": true,
+        "min": 0,
+        "max": 80,
+        "pattern": "",
+        "autogeneratePattern": "",
+        "primaryKey": false
+      },
+      {
+        "id": "text_app_slug",
+        "name": "slug",
+        "type": "text",
+        "required": true,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "min": 0,
+        "max": 80,
+        "pattern": "^[a-z0-9-]+$",
+        "autogeneratePattern": "",
+        "primaryKey": false
+      },
+      {
+        "id": "text_app_tagline",
+        "name": "tagline",
+        "type": "text",
+        "required": false,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "min": 0,
+        "max": 160,
+        "pattern": "",
+        "autogeneratePattern": "",
+        "primaryKey": false
+      },
+      {
+        "id": "text_app_accent",
+        "name": "accent",
+        "type": "text",
+        "required": true,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "min": 0,
+        "max": 7,
+        "pattern": "^#[0-9a-fA-F]{6}$",
+        "autogeneratePattern": "",
+        "primaryKey": false
+      },
+      {
+        "id": "text_app_store_id",
+        "name": "store_id",
+        "type": "text",
+        "required": false,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "min": 0,
+        "max": 40,
+        "pattern": "",
+        "autogeneratePattern": "",
+        "primaryKey": false
+      },
+      {
+        "id": "select_app_status",
+        "name": "status",
+        "type": "select",
+        "required": true,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "maxSelect": 1,
+        "values": [
+          "unknown",
+          "operational",
+          "degraded",
+          "partial_outage",
+          "major_outage",
+          "maintenance"
+        ]
+      },
+      {
+        "id": "text_app_status_message",
+        "name": "status_message",
+        "type": "text",
+        "required": false,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "min": 0,
+        "max": 280,
+        "pattern": "",
+        "autogeneratePattern": "",
+        "primaryKey": false
+      },
+      {
+        "id": "number_app_sort",
+        "name": "sort",
+        "type": "number",
+        "required": false,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "min": null,
+        "max": null,
+        "onlyInt": true
+      },
+      {
+        "id": "bool_app_visible",
+        "name": "visible",
+        "type": "bool",
+        "required": false,
+        "system": false,
+        "hidden": false,
+        "presentable": false
+      },
+      {
+        "id": "autodate_created",
+        "name": "created",
+        "type": "autodate",
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "onCreate": true,
+        "onUpdate": false
+      },
+      {
+        "id": "autodate_updated",
+        "name": "updated",
+        "type": "autodate",
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "onCreate": true,
+        "onUpdate": true
+      }
     ],
-    "indexes": ["CREATE UNIQUE INDEX idx_pulse_apps_slug ON pulse_apps (slug)"]
+    "indexes": [
+      "CREATE UNIQUE INDEX `idx_pulse_apps_slug` ON `pulse_apps` (`slug`)"
+    ]
   },
   {
     "id": "pbc_pulse_posts",
@@ -58,19 +347,167 @@
     "updateRule": "@request.auth.collectionName = \"pulse_editors\"",
     "deleteRule": "@request.auth.collectionName = \"pulse_editors\"",
     "fields": [
-      { "name": "title", "type": "text", "required": true, "presentable": true, "max": 160 },
-      { "name": "summary", "type": "text", "max": 320 },
-      { "name": "body", "type": "text", "max": 100000 },
-      { "name": "kind", "type": "select", "required": true, "maxSelect": 1, "values": ["announcement", "news", "event", "maintenance"] },
-      { "name": "apps", "type": "relation", "collectionId": "pbc_pulse_apps", "maxSelect": 50, "minSelect": 0, "cascadeDelete": false },
-      { "name": "pinned", "type": "bool" },
-      { "name": "state", "type": "select", "required": true, "maxSelect": 1, "values": ["draft", "published"] },
-      { "name": "publish_at", "type": "date", "required": true },
-      { "name": "cover", "type": "file", "maxSelect": 1, "maxSize": 5242880, "mimeTypes": ["image/png", "image/jpeg", "image/webp"], "thumbs": [], "protected": false },
-      { "name": "created", "type": "autodate", "onCreate": true, "onUpdate": false },
-      { "name": "updated", "type": "autodate", "onCreate": true, "onUpdate": true }
+      {
+        "id": "text3208210256",
+        "name": "id",
+        "type": "text",
+        "required": true,
+        "system": true,
+        "hidden": false,
+        "presentable": false,
+        "primaryKey": true,
+        "min": 15,
+        "max": 15,
+        "pattern": "^[a-z0-9]+$",
+        "autogeneratePattern": "[a-z0-9]{15}"
+      },
+      {
+        "id": "text_post_title",
+        "name": "title",
+        "type": "text",
+        "required": true,
+        "system": false,
+        "hidden": false,
+        "presentable": true,
+        "min": 0,
+        "max": 160,
+        "pattern": "",
+        "autogeneratePattern": "",
+        "primaryKey": false
+      },
+      {
+        "id": "text_post_summary",
+        "name": "summary",
+        "type": "text",
+        "required": false,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "min": 0,
+        "max": 320,
+        "pattern": "",
+        "autogeneratePattern": "",
+        "primaryKey": false
+      },
+      {
+        "id": "text_post_body",
+        "name": "body",
+        "type": "text",
+        "required": false,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "min": 0,
+        "max": 100000,
+        "pattern": "",
+        "autogeneratePattern": "",
+        "primaryKey": false
+      },
+      {
+        "id": "select_post_kind",
+        "name": "kind",
+        "type": "select",
+        "required": true,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "maxSelect": 1,
+        "values": [
+          "announcement",
+          "news",
+          "event",
+          "maintenance"
+        ]
+      },
+      {
+        "id": "relation_post_apps",
+        "name": "apps",
+        "type": "relation",
+        "required": false,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "collectionId": "pbc_pulse_apps",
+        "cascadeDelete": false,
+        "minSelect": 0,
+        "maxSelect": 50
+      },
+      {
+        "id": "bool_post_pinned",
+        "name": "pinned",
+        "type": "bool",
+        "required": false,
+        "system": false,
+        "hidden": false,
+        "presentable": false
+      },
+      {
+        "id": "select_post_state",
+        "name": "state",
+        "type": "select",
+        "required": true,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "maxSelect": 1,
+        "values": [
+          "draft",
+          "published"
+        ]
+      },
+      {
+        "id": "date_post_publish_at",
+        "name": "publish_at",
+        "type": "date",
+        "required": true,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "min": "",
+        "max": ""
+      },
+      {
+        "id": "file_post_cover",
+        "name": "cover",
+        "type": "file",
+        "required": false,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "maxSelect": 1,
+        "maxSize": 5242880,
+        "mimeTypes": [
+          "image/png",
+          "image/jpeg",
+          "image/webp"
+        ],
+        "thumbs": [],
+        "protected": false
+      },
+      {
+        "id": "autodate_created",
+        "name": "created",
+        "type": "autodate",
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "onCreate": true,
+        "onUpdate": false
+      },
+      {
+        "id": "autodate_updated",
+        "name": "updated",
+        "type": "autodate",
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "onCreate": true,
+        "onUpdate": true
+      }
     ],
-    "indexes": ["CREATE INDEX idx_pulse_posts_publish ON pulse_posts (state, publish_at)"]
+    "indexes": [
+      "CREATE INDEX `idx_pulse_posts_publish` ON `pulse_posts` (`state`, `publish_at`)"
+    ]
   },
   {
     "id": "pbc_pulse_releases",
@@ -83,17 +520,138 @@
     "updateRule": "@request.auth.collectionName = \"pulse_editors\"",
     "deleteRule": "@request.auth.collectionName = \"pulse_editors\"",
     "fields": [
-      { "name": "app", "type": "relation", "required": true, "collectionId": "pbc_pulse_apps", "maxSelect": 1, "minSelect": 0, "cascadeDelete": false },
-      { "name": "version", "type": "text", "required": true, "presentable": true, "max": 40 },
-      { "name": "title", "type": "text", "max": 160 },
-      { "name": "notes", "type": "text", "max": 100000 },
-      { "name": "channel", "type": "select", "required": true, "maxSelect": 1, "values": ["stable", "beta"] },
-      { "name": "state", "type": "select", "required": true, "maxSelect": 1, "values": ["draft", "published"] },
-      { "name": "released_at", "type": "date", "required": true },
-      { "name": "created", "type": "autodate", "onCreate": true, "onUpdate": false },
-      { "name": "updated", "type": "autodate", "onCreate": true, "onUpdate": true }
+      {
+        "id": "text3208210256",
+        "name": "id",
+        "type": "text",
+        "required": true,
+        "system": true,
+        "hidden": false,
+        "presentable": false,
+        "primaryKey": true,
+        "min": 15,
+        "max": 15,
+        "pattern": "^[a-z0-9]+$",
+        "autogeneratePattern": "[a-z0-9]{15}"
+      },
+      {
+        "id": "relation_rel_app",
+        "name": "app",
+        "type": "relation",
+        "required": true,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "collectionId": "pbc_pulse_apps",
+        "cascadeDelete": false,
+        "minSelect": 0,
+        "maxSelect": 1
+      },
+      {
+        "id": "text_rel_version",
+        "name": "version",
+        "type": "text",
+        "required": true,
+        "system": false,
+        "hidden": false,
+        "presentable": true,
+        "min": 0,
+        "max": 40,
+        "pattern": "",
+        "autogeneratePattern": "",
+        "primaryKey": false
+      },
+      {
+        "id": "text_rel_title",
+        "name": "title",
+        "type": "text",
+        "required": false,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "min": 0,
+        "max": 160,
+        "pattern": "",
+        "autogeneratePattern": "",
+        "primaryKey": false
+      },
+      {
+        "id": "text_rel_notes",
+        "name": "notes",
+        "type": "text",
+        "required": false,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "min": 0,
+        "max": 100000,
+        "pattern": "",
+        "autogeneratePattern": "",
+        "primaryKey": false
+      },
+      {
+        "id": "select_rel_channel",
+        "name": "channel",
+        "type": "select",
+        "required": true,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "maxSelect": 1,
+        "values": [
+          "stable",
+          "beta"
+        ]
+      },
+      {
+        "id": "select_rel_state",
+        "name": "state",
+        "type": "select",
+        "required": true,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "maxSelect": 1,
+        "values": [
+          "draft",
+          "published"
+        ]
+      },
+      {
+        "id": "date_rel_released_at",
+        "name": "released_at",
+        "type": "date",
+        "required": true,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "min": "",
+        "max": ""
+      },
+      {
+        "id": "autodate_created",
+        "name": "created",
+        "type": "autodate",
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "onCreate": true,
+        "onUpdate": false
+      },
+      {
+        "id": "autodate_updated",
+        "name": "updated",
+        "type": "autodate",
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "onCreate": true,
+        "onUpdate": true
+      }
     ],
-    "indexes": ["CREATE INDEX idx_pulse_releases_date ON pulse_releases (state, released_at)"]
+    "indexes": [
+      "CREATE INDEX `idx_pulse_releases_date` ON `pulse_releases` (`state`, `released_at`)"
+    ]
   },
   {
     "id": "pbc_pulse_incidents",
@@ -106,14 +664,120 @@
     "updateRule": "@request.auth.collectionName = \"pulse_editors\"",
     "deleteRule": "@request.auth.collectionName = \"pulse_editors\"",
     "fields": [
-      { "name": "title", "type": "text", "required": true, "presentable": true, "max": 160 },
-      { "name": "severity", "type": "select", "required": true, "maxSelect": 1, "values": ["minor", "major", "critical"] },
-      { "name": "phase", "type": "select", "required": true, "maxSelect": 1, "values": ["investigating", "identified", "monitoring", "resolved"] },
-      { "name": "apps", "type": "relation", "collectionId": "pbc_pulse_apps", "maxSelect": 50, "minSelect": 0, "cascadeDelete": false },
-      { "name": "started_at", "type": "date", "required": true },
-      { "name": "resolved_at", "type": "date" },
-      { "name": "created", "type": "autodate", "onCreate": true, "onUpdate": false },
-      { "name": "updated", "type": "autodate", "onCreate": true, "onUpdate": true }
+      {
+        "id": "text3208210256",
+        "name": "id",
+        "type": "text",
+        "required": true,
+        "system": true,
+        "hidden": false,
+        "presentable": false,
+        "primaryKey": true,
+        "min": 15,
+        "max": 15,
+        "pattern": "^[a-z0-9]+$",
+        "autogeneratePattern": "[a-z0-9]{15}"
+      },
+      {
+        "id": "text_inc_title",
+        "name": "title",
+        "type": "text",
+        "required": true,
+        "system": false,
+        "hidden": false,
+        "presentable": true,
+        "min": 0,
+        "max": 160,
+        "pattern": "",
+        "autogeneratePattern": "",
+        "primaryKey": false
+      },
+      {
+        "id": "select_inc_severity",
+        "name": "severity",
+        "type": "select",
+        "required": true,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "maxSelect": 1,
+        "values": [
+          "minor",
+          "major",
+          "critical"
+        ]
+      },
+      {
+        "id": "select_inc_phase",
+        "name": "phase",
+        "type": "select",
+        "required": true,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "maxSelect": 1,
+        "values": [
+          "investigating",
+          "identified",
+          "monitoring",
+          "resolved"
+        ]
+      },
+      {
+        "id": "relation_inc_apps",
+        "name": "apps",
+        "type": "relation",
+        "required": false,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "collectionId": "pbc_pulse_apps",
+        "cascadeDelete": false,
+        "minSelect": 0,
+        "maxSelect": 50
+      },
+      {
+        "id": "date_inc_started_at",
+        "name": "started_at",
+        "type": "date",
+        "required": true,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "min": "",
+        "max": ""
+      },
+      {
+        "id": "date_inc_resolved_at",
+        "name": "resolved_at",
+        "type": "date",
+        "required": false,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "min": "",
+        "max": ""
+      },
+      {
+        "id": "autodate_created",
+        "name": "created",
+        "type": "autodate",
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "onCreate": true,
+        "onUpdate": false
+      },
+      {
+        "id": "autodate_updated",
+        "name": "updated",
+        "type": "autodate",
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "onCreate": true,
+        "onUpdate": true
+      }
     ],
     "indexes": []
   },
@@ -128,11 +792,83 @@
     "updateRule": "@request.auth.collectionName = \"pulse_editors\"",
     "deleteRule": "@request.auth.collectionName = \"pulse_editors\"",
     "fields": [
-      { "name": "incident", "type": "relation", "required": true, "collectionId": "pbc_pulse_incidents", "maxSelect": 1, "minSelect": 0, "cascadeDelete": true },
-      { "name": "phase", "type": "select", "required": true, "maxSelect": 1, "values": ["investigating", "identified", "monitoring", "resolved"] },
-      { "name": "message", "type": "text", "required": true, "presentable": true, "max": 2000 },
-      { "name": "created", "type": "autodate", "onCreate": true, "onUpdate": false },
-      { "name": "updated", "type": "autodate", "onCreate": true, "onUpdate": true }
+      {
+        "id": "text3208210256",
+        "name": "id",
+        "type": "text",
+        "required": true,
+        "system": true,
+        "hidden": false,
+        "presentable": false,
+        "primaryKey": true,
+        "min": 15,
+        "max": 15,
+        "pattern": "^[a-z0-9]+$",
+        "autogeneratePattern": "[a-z0-9]{15}"
+      },
+      {
+        "id": "relation_upd_incident",
+        "name": "incident",
+        "type": "relation",
+        "required": true,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "collectionId": "pbc_pulse_incidents",
+        "cascadeDelete": true,
+        "minSelect": 0,
+        "maxSelect": 1
+      },
+      {
+        "id": "select_upd_phase",
+        "name": "phase",
+        "type": "select",
+        "required": true,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "maxSelect": 1,
+        "values": [
+          "investigating",
+          "identified",
+          "monitoring",
+          "resolved"
+        ]
+      },
+      {
+        "id": "text_upd_message",
+        "name": "message",
+        "type": "text",
+        "required": true,
+        "system": false,
+        "hidden": false,
+        "presentable": true,
+        "min": 0,
+        "max": 2000,
+        "pattern": "",
+        "autogeneratePattern": "",
+        "primaryKey": false
+      },
+      {
+        "id": "autodate_created",
+        "name": "created",
+        "type": "autodate",
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "onCreate": true,
+        "onUpdate": false
+      },
+      {
+        "id": "autodate_updated",
+        "name": "updated",
+        "type": "autodate",
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "onCreate": true,
+        "onUpdate": true
+      }
     ],
     "indexes": []
   }
