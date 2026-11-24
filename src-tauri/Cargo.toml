@@ -1,6 +1,6 @@
 [package]
 name = "nexora-pulse"
-version = "0.1.0"
+version = "0.1.1"
 description = "Annonces, mises à jour et état de l'écosystème Nexora"
 authors = ["Nexora Team"]
 edition = "2024"
