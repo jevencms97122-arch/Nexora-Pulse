@@ -1,0 +1,15 @@
+node_modules/
+dist/
+src-tauri/target/
+src-tauri/gen/schemas/
+*.log
+.DS_Store
+.vscode/
+.claude/
+
+# Secrets: never commit signing keys or local environment files
+.env
+.env.*
+*.key
+*.key.pub
+*.key.password

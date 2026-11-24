@@ -1,0 +1,58 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Nexora Pulse",
+  "version": "0.1.0",
+  "identifier": "com.nexora.pulse",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1430",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Nexora Pulse",
+        "width": 1320,
+        "height": 860,
+        "minWidth": 1000,
+        "minHeight": 660,
+        "center": true,
+        "decorations": false,
+        "transparent": true,
+        "shadow": true,
+        "visible": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: http://92.49.99.59:8096 http://92.49.99.59:8097; font-src 'self'; connect-src ipc: http://ipc.localhost; object-src 'none'; base-uri 'none'; frame-src 'none'",
+      "devCsp": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: http://92.49.99.59:8096 http://92.49.99.59:8097; font-src 'self'; connect-src 'self' ipc: http://ipc.localhost ws://localhost:1430; object-src 'none'; base-uri 'none'; frame-src 'none'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "publisher": "Nexora Team",
+    "shortDescription": "Annonces, mises à jour et état de l'écosystème Nexora",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDlBRUY2RUE3MkRBN0EwOEQKUldTTm9LY3RwMjd2bWdHNzV3VUZqVm5TMldHSElJUVFIYUNGa0ZkVzdGdjloZzI5VERpYm81QWUK",
+      "endpoints": [
+        "https://github.com/jevencms97122-arch/Nexora-Pulse/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}
