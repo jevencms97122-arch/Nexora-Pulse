@@ -1,19 +1,18 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { Activity, CircleArrowUp, Copy, LayoutGrid, Megaphone, Minus, PenLine, RotateCw, Settings, Sparkles, Square, WifiOff, X } from "lucide-react";
+import { CircleArrowUp, Copy, LayoutGrid, Megaphone, Minus, PenLine, RotateCw, Settings, Sparkles, Square, WifiOff, X } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState, type ReactNode } from "react";
 import { api, inTauri } from "../lib/api";
 import type { Page } from "../lib/types";
 import { usePulse } from "../state/pulse";
-import { HeartbeatLine, Logo } from "./Logo";
+import { Logo } from "./Logo";
 import { spring } from "./ui";
 
 const NAV: { page: Page; label: string; icon: ReactNode }[] = [
-  { page: "today", label: "Aujourd'hui", icon: <Sparkles size={17} /> },
-  { page: "posts", label: "Annonces", icon: <Megaphone size={17} /> },
-  { page: "releases", label: "Mises à jour", icon: <CircleArrowUp size={17} /> },
-  { page: "status", label: "État", icon: <Activity size={17} /> },
-  { page: "apps", label: "Applications", icon: <LayoutGrid size={17} /> },
+  { page: "today", label: "Aujourd'hui", icon: <Sparkles size={16} /> },
+  { page: "posts", label: "Annonces", icon: <Megaphone size={16} /> },
+  { page: "releases", label: "Mises à jour", icon: <CircleArrowUp size={16} /> },
+  { page: "apps", label: "Applications", icon: <LayoutGrid size={16} /> },
 ];
 
 function NavItem({ page, label, icon }: { page: Page; label: string; icon: ReactNode }) {
@@ -23,10 +22,10 @@ function NavItem({ page, label, icon }: { page: Page; label: string; icon: React
     <button
       onClick={() => go(page)}
       aria-current={active ? "page" : undefined}
-      className={`relative flex h-9 w-full items-center gap-2.5 rounded-[10px] px-2.5 text-[13.5px] font-medium transition-colors ${active ? "text-white" : "text-fg hover:bg-[var(--line)]"}`}
+      className={`relative flex h-8 w-full items-center gap-2.5 rounded-lg px-2.5 text-[13.5px] transition-colors ${active ? "font-semibold text-fg" : "font-medium text-muted hover:text-fg"}`}
     >
-      {active && <motion.span layoutId="nav-active" transition={spring} className="absolute inset-0 rounded-[10px] bg-accent" />}
-      <span className={`relative ${active ? "text-white" : "text-accent"}`}>{icon}</span>
+      {active && <motion.span layoutId="nav-active" transition={spring} className="absolute inset-0 rounded-lg bg-[var(--line)]" />}
+      <span className={`relative ${active ? "text-accent" : ""}`}>{icon}</span>
       <span className="relative truncate">{label}</span>
     </button>
   );
@@ -58,15 +57,12 @@ function UpdatePill() {
 export function Sidebar() {
   const { snapshot, editor } = usePulse();
   return (
-    <aside className="sidebar relative flex w-[244px] shrink-0 flex-col px-3 pb-3">
-      <div data-tauri-drag-region className="flex h-[72px] shrink-0 items-center gap-2.5 px-1.5">
+    <aside className="sidebar relative flex w-[220px] shrink-0 flex-col px-3 pb-3">
+      <div data-tauri-drag-region className="flex h-[68px] shrink-0 items-center gap-2.5 px-2.5">
         <span className="pointer-events-none">
-          <Logo size={34} />
+          <Logo size={24} />
         </span>
-        <div className="pointer-events-none leading-tight">
-          <p className="text-[11px] font-medium text-muted">Nexora</p>
-          <p className="t-headline -mt-0.5">Pulse</p>
-        </div>
+        <p className="pointer-events-none text-[14px] font-semibold tracking-[-0.01em]">Nexora Pulse</p>
       </div>
       <nav className="flex flex-col gap-0.5" aria-label="Navigation principale">
         {NAV.map((item) => (
@@ -74,23 +70,23 @@ export function Sidebar() {
         ))}
         {editor && (
           <>
-            <p className="mt-4 mb-1 px-2.5 text-[11px] font-semibold text-faint">Administration</p>
-            <NavItem page="studio" label="Studio" icon={<PenLine size={17} />} />
+            <p className="mt-5 mb-1 px-2.5 text-[11px] font-medium text-faint">Administration</p>
+            <NavItem page="studio" label="Studio" icon={<PenLine size={16} />} />
           </>
         )}
       </nav>
       <div className="mt-auto">
         <UpdatePill />
-        <NavItem page="settings" label="Réglages" icon={<Settings size={17} />} />
-        <div className="mt-1.5 flex h-7 items-center gap-2 px-2.5 text-[11.5px] font-medium text-muted">
+        <NavItem page="settings" label="Réglages" icon={<Settings size={16} />} />
+        <div className="mt-2 flex h-6 items-center gap-2 px-2.5 text-[11.5px] text-faint">
           {snapshot.online ? (
             <>
-              <HeartbeatLine color={snapshot.live ? "var(--green)" : "var(--gray)"} width={26} />
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: snapshot.live ? "var(--green)" : "var(--gray)" }} />
               {!inTauri ? "Mode démo" : snapshot.live ? "En direct" : "Connecté"}
             </>
           ) : (
             <>
-              <WifiOff size={13} /> Hors ligne
+              <WifiOff size={12} /> Hors ligne
             </>
           )}
         </div>

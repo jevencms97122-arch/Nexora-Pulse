@@ -6,10 +6,12 @@ import { listen } from "@tauri-apps/api/event";
 import type {
   AppInfo,
   AppInput,
+  CheckResult,
   CoverInput,
   Editor,
   IncidentInput,
   Phase,
+  Ping,
   PostInput,
   Prefs,
   ReleaseInput,
@@ -44,6 +46,8 @@ export const api = {
   updateIncident: (id: string, phase: Phase, message: string) => call<Snapshot>("update_incident", { id, phase, message }),
   deleteRecord: (collection: "pulse_posts" | "pulse_releases" | "pulse_incidents", id: string) =>
     call<Snapshot>("delete_record", { collection, id }),
+  pingApps: () => call<Ping[]>("ping_apps"),
+  testCheck: (kind: "http" | "tcp", target: string) => call<CheckResult>("test_check", { kind, target }),
   deleteApp: (id: string) => call<Snapshot>("delete_app", { id }),
   renderMarkdown: (text: string) => call<string>("render_markdown", { text }),
   updateStatus: () => call<UpdateInfo | null>("update_status"),

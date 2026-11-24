@@ -16,6 +16,11 @@ const app = (id: string, name: string, tagline: string, accent: string, version:
   sort,
   visible: true,
   updated: daysAgo(0),
+  check_kind: "none",
+  check_target: "",
+  check_ok: false,
+  check_latency: 0,
+  checked_at: "",
   version,
   icon_url: "",
 });
@@ -94,8 +99,17 @@ const incidents: Incident[] = [
   },
 ];
 
+/** Fake measured days for two apps, so the demo shows the uptime bars. */
+const demoUptime = (appId: string, badDays: Record<number, number>) =>
+  Array.from({ length: 60 }, (_, i) => {
+    const total = 1440;
+    const day = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
+    return { app: appId, day, ok: total - (badDays[i] ?? 0), total, latency_sum: total * 40 };
+  });
+
 let snapshot: Snapshot = {
   apps,
+  uptime: [...demoUptime("chat", { 9: 3, 25: 120 }), ...demoUptime("store", {})],
   posts: [
     post("p1", "Bienvenue sur Nexora Pulse", "Toutes les annonces, les mises à jour et l'état de l'écosystème Nexora, réunis au même endroit.", "announcement", [], 0, true),
     post("p2", "Nexora Chat passe en 1.1", "Une messagerie plus rapide, de nouveaux salons et des notifications repensées.", "news", ["chat"], 1),
@@ -108,7 +122,7 @@ let snapshot: Snapshot = {
     release("r2", "chat", "1.1.1", "Notifications plus fiables", 1),
     release("r3", "convert", "1.0", "Première version stable", 2),
     release("r4", "music", "1.0.1", "Lecture plus stable", 2),
-    release("r5", "craft", "0.1.6", "Nouveau lanceur", 2, "beta"),
+    release("r5", "craft", "0.1.6", "Nouveau lanceur", 2),
   ],
   incidents,
   online: true,
@@ -197,6 +211,14 @@ export function demoCall(command: string, args: Record<string, any> = {}): unkno
       };
       return snapshot;
     }
+    case "ping_apps":
+      return [
+        { app: "chat", ok: true, latency_ms: 38 },
+        { app: "store", ok: true, latency_ms: 21 },
+        { app: "music", ok: true, latency_ms: 124 },
+      ];
+    case "test_check":
+      return { ok: true, latency_ms: 42, detail: args.kind === "http" ? "Réponse HTTP 200 (démo)" : "Connexion réussie (démo)" };
     case "delete_app":
       snapshot = { ...snapshot, apps: snapshot.apps.filter((a) => a.id !== args.id), releases: snapshot.releases.filter((r) => r.app !== args.id) };
       return snapshot;

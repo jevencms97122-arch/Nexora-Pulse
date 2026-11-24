@@ -38,6 +38,11 @@ fn date_or_now(value: &str) -> String {
     if value.is_empty() { now() } else { value }
 }
 
+/// An address the status page can ping. Nothing to ping is always valid.
+fn valid_check_target(kind: &str, target: &str) -> bool {
+    kind == "none" || crate::ping::valid_target(kind, target)
+}
+
 fn slugify(name: &str) -> String {
     let mut out = String::new();
     for c in name.to_lowercase().chars() {
@@ -164,7 +169,8 @@ pub async fn save_release(
 ) -> Result<Snapshot> {
     let target = required(&input.app, "Application")?;
     let version = required(&input.version, "Version")?;
-    one_of(&CHANNELS, &input.channel, "Canal")?;
+    let channel = if input.channel.is_empty() { "stable" } else { input.channel.as_str() };
+    one_of(&CHANNELS, channel, "Canal")?;
     one_of(&PUBLISH_STATES, &input.state, "État")?;
     let token = fresh_token(&state).await?;
     let body = json!({
@@ -172,7 +178,7 @@ pub async fn save_release(
         "version": version,
         "title": input.title.trim(),
         "notes": input.notes,
-        "channel": input.channel,
+        "channel": channel,
         "state": input.state,
         "released_at": date_or_now(&input.released_at),
     });
@@ -192,6 +198,8 @@ pub struct AppInput {
     status_message: String,
     sort: i64,
     visible: bool,
+    check_kind: String,
+    check_target: String,
 }
 
 #[tauri::command]
@@ -205,8 +213,19 @@ pub async fn save_app(app: AppHandle, state: State<'_, AppState>, input: AppInpu
     if !valid_accent {
         return Err(Error::msg("Couleur invalide."));
     }
+    let check_kind = if input.check_kind.is_empty() { "none" } else { input.check_kind.as_str() };
+    one_of(&CHECK_KINDS, check_kind, "Type de surveillance")?;
+    let check_target = input.check_target.trim();
+    if !valid_check_target(check_kind, check_target) {
+        return Err(Error::msg(match check_kind {
+            "http" => "Adresse à surveiller : elle doit commencer par http:// ou https://.",
+            _ => "Adresse à surveiller : utilise le format hôte:port, par exemple 92.49.99.59:25565.",
+        }));
+    }
     let token = fresh_token(&state).await?;
     let mut body = json!({
+        "check_kind": check_kind,
+        "check_target": if check_kind == "none" { "" } else { check_target },
         "name": name,
         "tagline": input.tagline.trim(),
         "accent": accent,
@@ -340,6 +359,32 @@ pub async fn delete_app(app: AppHandle, state: State<'_, AppState>, id: String) 
     Ok(sync::refresh(&app).await)
 }
 
+#[derive(serde::Serialize)]
+pub struct CheckResult {
+    ok: bool,
+    latency_ms: u64,
+    detail: String,
+}
+
+/// Tries an address once, from this computer, with the same rule as the live pings on the status page.
+#[tauri::command]
+pub async fn test_check(state: State<'_, AppState>, kind: String, target: String) -> Result<CheckResult> {
+    if state.token().is_none() {
+        return Err(Error::Unauthorized);
+    }
+    one_of(&["http", "tcp"], &kind, "Type de test")?;
+    let target = target.trim();
+    if !valid_check_target(&kind, target) {
+        return Err(Error::msg(if kind == "http" {
+            "L'adresse doit commencer par http:// ou https://."
+        } else {
+            "Utilise le format hôte:port, par exemple 92.49.99.59:25565."
+        }));
+    }
+    let result = crate::ping::probe(&crate::ping::client(), &kind, target).await;
+    Ok(CheckResult { ok: result.ok, latency_ms: result.latency_ms, detail: result.detail })
+}
+
 #[tauri::command]
 pub fn render_markdown(text: String) -> String {
     markdown::to_html(&text)
@@ -347,12 +392,21 @@ pub fn render_markdown(text: String) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{cover_mime, slugify};
+    use super::{cover_mime, slugify, valid_check_target};
 
     #[test]
     fn slugs_are_clean() {
         assert_eq!(slugify("Nexora  Craft!"), "nexora-craft");
         assert_eq!(slugify("  Nexora Tools "), "nexora-tools");
+    }
+
+    #[test]
+    fn check_targets_are_validated() {
+        assert!(valid_check_target("none", ""));
+        assert!(valid_check_target("http", "https://a.fr/health"));
+        assert!(!valid_check_target("http", "a.fr"));
+        assert!(valid_check_target("tcp", "1.2.3.4:25565"));
+        assert!(!valid_check_target("tcp", "1.2.3.4"));
     }
 
     #[test]

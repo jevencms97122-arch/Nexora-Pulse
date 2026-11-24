@@ -1,4 +1,4 @@
-import type { AppStatus, Channel, Incident, Phase, Post, PostKind, PulseApp, Release, Severity } from "./types";
+import type { AppStatus, Incident, Phase, Post, PostKind, PulseApp, Release, Severity } from "./types";
 
 export const parseDate = (value: string) => {
   if (!value) return null;
@@ -82,8 +82,6 @@ export const KIND_META: Record<PostKind, { label: string; plural: string; color:
   maintenance: { label: "Maintenance", plural: "Maintenances", color: "var(--orange)" },
 };
 
-export const CHANNEL_LABEL: Record<Channel, string> = { stable: "Stable", beta: "Bêta" };
-
 export const SEVERITY_META: Record<Severity, { label: string; color: string; rank: number }> = {
   minor: { label: "Mineur", color: "var(--yellow)", rank: 1 },
   major: { label: "Majeur", color: "var(--orange)", rank: 2 },
@@ -142,27 +140,3 @@ export const publishLabel = (state: string, at: string) => {
   if (state === "draft") return "Brouillon";
   return isFuture(at) ? `Programmé · ${formatTime(at)}` : "Publié";
 };
-
-/** Worst incident severity per day for an app, over the last `days` days. */
-export function incidentDays(appId: string, incidents: Incident[], days = 90): { date: Date; rank: number; titles: string[] }[] {
-  const end = new Date();
-  end.setHours(0, 0, 0, 0);
-  const related = incidents.filter((i) => i.apps.includes(appId));
-  return Array.from({ length: days }, (_, index) => {
-    const date = new Date(end);
-    date.setDate(end.getDate() - (days - 1 - index));
-    const next = new Date(date);
-    next.setDate(date.getDate() + 1);
-    let rank = 0;
-    const titles: string[] = [];
-    for (const incident of related) {
-      const start = parseDate(incident.started_at);
-      const stop = parseDate(incident.resolved_at) ?? new Date();
-      if (start && start < next && stop >= date) {
-        rank = Math.max(rank, SEVERITY_META[incident.severity].rank);
-        titles.push(incident.title);
-      }
-    }
-    return { date, rank, titles };
-  });
-}

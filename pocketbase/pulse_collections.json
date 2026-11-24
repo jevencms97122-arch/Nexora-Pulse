@@ -312,6 +312,67 @@
         "presentable": false
       },
       {
+        "id": "select_app_check_kind",
+        "name": "check_kind",
+        "type": "select",
+        "required": false,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "maxSelect": 1,
+        "values": [
+          "none",
+          "http",
+          "tcp"
+        ]
+      },
+      {
+        "id": "text_app_check_target",
+        "name": "check_target",
+        "type": "text",
+        "required": false,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "min": 0,
+        "max": 300,
+        "pattern": "",
+        "autogeneratePattern": "",
+        "primaryKey": false
+      },
+      {
+        "id": "bool_app_check_ok",
+        "name": "check_ok",
+        "type": "bool",
+        "required": false,
+        "system": false,
+        "hidden": false,
+        "presentable": false
+      },
+      {
+        "id": "number_app_check_latency",
+        "name": "check_latency",
+        "type": "number",
+        "required": false,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "min": null,
+        "max": null,
+        "onlyInt": true
+      },
+      {
+        "id": "date_app_checked_at",
+        "name": "checked_at",
+        "type": "date",
+        "required": false,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "min": "",
+        "max": ""
+      },
+      {
         "id": "autodate_created",
         "name": "created",
         "type": "autodate",
@@ -334,6 +395,119 @@
     ],
     "indexes": [
       "CREATE UNIQUE INDEX `idx_pulse_apps_slug` ON `pulse_apps` (`slug`)"
+    ]
+  },
+  {
+    "id": "pbc_pulse_uptime",
+    "name": "pulse_uptime",
+    "type": "base",
+    "system": false,
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "@request.auth.collectionName = \"pulse_editors\"",
+    "updateRule": "@request.auth.collectionName = \"pulse_editors\"",
+    "deleteRule": "@request.auth.collectionName = \"pulse_editors\"",
+    "fields": [
+      {
+        "id": "text3208210256",
+        "name": "id",
+        "type": "text",
+        "required": true,
+        "system": true,
+        "hidden": false,
+        "presentable": false,
+        "primaryKey": true,
+        "min": 15,
+        "max": 15,
+        "pattern": "^[a-z0-9]+$",
+        "autogeneratePattern": "[a-z0-9]{15}"
+      },
+      {
+        "id": "relation_up_app",
+        "name": "app",
+        "type": "relation",
+        "required": true,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "collectionId": "pbc_pulse_apps",
+        "cascadeDelete": true,
+        "minSelect": 0,
+        "maxSelect": 1
+      },
+      {
+        "id": "text_up_day",
+        "name": "day",
+        "type": "text",
+        "required": true,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "min": 10,
+        "max": 10,
+        "pattern": "^d{4}-d{2}-d{2}$",
+        "autogeneratePattern": "",
+        "primaryKey": false
+      },
+      {
+        "id": "number_up_ok",
+        "name": "ok",
+        "type": "number",
+        "required": false,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "min": 0,
+        "max": null,
+        "onlyInt": true
+      },
+      {
+        "id": "number_up_total",
+        "name": "total",
+        "type": "number",
+        "required": false,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "min": 0,
+        "max": null,
+        "onlyInt": true
+      },
+      {
+        "id": "number_up_latency",
+        "name": "latency_sum",
+        "type": "number",
+        "required": false,
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "min": 0,
+        "max": null,
+        "onlyInt": true
+      },
+      {
+        "id": "autodate_created",
+        "name": "created",
+        "type": "autodate",
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "onCreate": true,
+        "onUpdate": false
+      },
+      {
+        "id": "autodate_updated",
+        "name": "updated",
+        "type": "autodate",
+        "system": false,
+        "hidden": false,
+        "presentable": false,
+        "onCreate": true,
+        "onUpdate": true
+      }
+    ],
+    "indexes": [
+      "CREATE UNIQUE INDEX `idx_pulse_uptime_day` ON `pulse_uptime` (`app`, `day`)"
     ]
   },
   {

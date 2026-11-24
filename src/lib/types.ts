@@ -17,8 +17,24 @@ export interface PulseApp {
   sort: number;
   visible: boolean;
   updated: string;
+  check_kind: CheckKind;
+  check_target: string;
+  check_ok: boolean;
+  check_latency: number;
+  checked_at: string;
   version: string;
   icon_url: string;
+}
+
+export type CheckKind = "none" | "http" | "tcp";
+
+/** Checks counted for one app on one UTC day, written by pulse-monitor. */
+export interface UptimeDay {
+  app: string;
+  day: string;
+  ok: number;
+  total: number;
+  latency_sum: number;
 }
 
 export interface Post {
@@ -75,6 +91,7 @@ export interface Incident {
 
 export interface Snapshot {
   apps: PulseApp[];
+  uptime: UptimeDay[];
   posts: Post[];
   releases: Release[];
   incidents: Incident[];
@@ -154,6 +171,21 @@ export interface AppInput {
   status_message: string;
   sort: number;
   visible: boolean;
+  check_kind: CheckKind;
+  check_target: string;
+}
+
+/** Live response time of one app, measured when the status page opens. */
+export interface Ping {
+  app: string;
+  ok: boolean;
+  latency_ms: number;
+}
+
+export interface CheckResult {
+  ok: boolean;
+  latency_ms: number;
+  detail: string;
 }
 
 export interface IncidentInput {
@@ -163,4 +195,4 @@ export interface IncidentInput {
   message: string;
 }
 
-export type Page = "today" | "posts" | "releases" | "status" | "apps" | "settings" | "studio";
+export type Page = "today" | "posts" | "releases" | "apps" | "settings" | "studio";

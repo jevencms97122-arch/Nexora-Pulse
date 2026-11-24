@@ -2,7 +2,7 @@ use crate::{
     config::{STORE_SERVER, TOPICS},
     error::{Error, Result},
     markdown,
-    models::{App, Incident, IncidentUpdate, Post, Release, Snapshot, StoreApp, now, public_view},
+    models::{App, Incident, IncidentUpdate, Post, Release, Snapshot, StoreApp, UptimeDay, now, public_view},
     state::AppState,
 };
 use futures_util::StreamExt;
@@ -16,6 +16,7 @@ const SNAPSHOT_KEY: &str = "snapshot";
 const CATALOG_KEY: &str = "store-catalog";
 const SEEDED_KEY: &str = "notifications-seeded";
 const MAX_TOASTS: usize = 3;
+const UPTIME_DAYS: i64 = 90;
 
 /// Loads everything visible to the current user from the server.
 async fn fetch(state: &AppState) -> Result<Snapshot> {
@@ -28,6 +29,14 @@ async fn fetch(state: &AppState) -> Result<Snapshot> {
         state.pb.list_all::<Incident>("pulse_incidents", "-started_at", t),
         state.pb.list_all::<IncidentUpdate>("pulse_incident_updates", "created", t),
     )?;
+
+    // Measured uptime is optional: an older server without the collection still works.
+    let since = (chrono::Utc::now() - chrono::Duration::days(UPTIME_DAYS)).format("%Y-%m-%d").to_string();
+    let uptime = state
+        .pb
+        .list_filtered::<UptimeDay>("pulse_uptime", "day", &format!("day >= \"{since}\""), t)
+        .await
+        .unwrap_or_default();
 
     let catalog = store_catalog(state).await;
     for app in &mut apps {
@@ -55,6 +64,7 @@ async fn fetch(state: &AppState) -> Result<Snapshot> {
 
     Ok(Snapshot {
         apps,
+        uptime,
         posts,
         releases,
         incidents,

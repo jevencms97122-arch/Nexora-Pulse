@@ -1,74 +1,88 @@
 import { ChevronLeft, LayoutGrid } from "lucide-react";
-import { motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AppIcon } from "../components/AppIcon";
-import { AppStatusLabel, HistoryBars, IncidentCard, PostCard, ReleaseRow } from "../components/Content";
-import { Empty, PageHeader, Reveal, SectionTitle, softSpring } from "../components/ui";
+import { AppStatusLabel, IncidentCard, InfoRow, LatencyLabel, PostRow, ReleaseRow, latencyOf } from "../components/Content";
+import { Empty, PageHeader, Reveal, SectionTitle, StatusDot } from "../components/ui";
+import { formatRelative, overallStatus } from "../lib/format";
 import type { PulseApp } from "../lib/types";
 import { usePulse } from "../state/pulse";
 
 function AppDetail({ app }: { app: PulseApp }) {
-  const { posts, releases, snapshot, go } = usePulse();
+  const { posts, releases, incidents, pings, pingNow, go } = usePulse();
   const [open, setOpen] = useState<string | null>(null);
+
+  useEffect(() => {
+    void pingNow();
+  }, [pingNow]);
+
   const appPosts = posts.filter((p) => p.apps.includes(app.id));
   const appReleases = releases.filter((r) => r.app === app.id);
-  const incidents = snapshot.incidents.filter((i) => i.apps.includes(app.id));
-  const activeIncidents = incidents.filter((i) => i.phase !== "resolved");
+  const activeIncidents = incidents.filter((i) => i.apps.includes(app.id) && i.phase !== "resolved");
   const version = app.version || appReleases[0]?.version;
 
   return (
     <>
-      <button onClick={() => go("apps")} className="mb-4 -ml-1 flex items-center text-[14px] font-medium text-accent hover:underline">
+      <button onClick={() => go("apps")} className="mb-6 -ml-1.5 flex items-center text-[14px] font-medium text-accent">
         <ChevronLeft size={18} /> Applications
       </button>
+
       <Reveal>
-        <header
-          className="squircle mb-7 flex items-center gap-6 rounded-[28px] p-8"
-          style={{ background: `linear-gradient(120deg, color-mix(in srgb, ${app.accent} 20%, var(--surface)), var(--surface) 74%)`, boxShadow: "var(--shadow-card)" }}
-        >
-          <AppIcon app={app} size={104} />
-          <div className="min-w-0 flex-1">
+        <header className="mb-10 flex items-center gap-5">
+          <AppIcon app={app} size={80} />
+          <div className="min-w-0">
             <h1 className="t-large truncate">{app.name}</h1>
-            {app.tagline && <p className="mt-1 text-[16px] text-muted">{app.tagline}</p>}
-            <div className="mt-3 flex items-center gap-4">
-              <AppStatusLabel app={app} />
-              {version && <span className="text-[12.5px] font-medium text-muted">Version {version}</span>}
-            </div>
-            {app.status_message && <p className="mt-1.5 text-[13px] text-muted">{app.status_message}</p>}
+            {app.tagline && <p className="mt-1 text-[15px] text-muted">{app.tagline}</p>}
           </div>
         </header>
       </Reveal>
+
+      <Reveal delay={0.03} className="mb-10">
+        <div className="card divide-y divide-[var(--line)] overflow-hidden">
+          <InfoRow label="État">
+            <AppStatusLabel app={app} />
+          </InfoRow>
+          {latencyOf(app, pings) !== null && (
+            <InfoRow label="Temps de réponse">
+              <LatencyLabel app={app} />
+            </InfoRow>
+          )}
+          {app.status_message && <InfoRow label="Message">{app.status_message}</InfoRow>}
+          {version && (
+            <InfoRow label="Version">
+              <span className="tabular-nums">{version}</span>
+            </InfoRow>
+          )}
+        </div>
+      </Reveal>
+
       {activeIncidents.length > 0 && (
-        <Reveal className="mb-8">
+        <Reveal delay={0.05} className="mb-10">
           <SectionTitle title="Incident en cours" />
-          <div className="space-y-4">
+          <div className="space-y-3">
             {activeIncidents.map((incident) => (
               <IncidentCard key={incident.id} incident={incident} />
             ))}
           </div>
         </Reveal>
       )}
-      <Reveal delay={0.05} className="mb-8">
-        <SectionTitle title="Historique sur 90 jours" />
-        <div className="card p-5">
-          <HistoryBars app={app} incidents={snapshot.incidents} />
-        </div>
-      </Reveal>
-      <Reveal delay={0.08} className="mb-8">
-        <SectionTitle title="Notes de version" />
-        <div className="card divide-y divide-[var(--line)] overflow-hidden">
-          {appReleases.length === 0 && <p className="p-6 text-center text-muted">Aucune note de version pour le moment.</p>}
-          {appReleases.map((release) => (
-            <ReleaseRow key={release.id} release={release} open={open === release.id} onToggle={() => setOpen(open === release.id ? null : release.id)} />
-          ))}
-        </div>
-      </Reveal>
+
+      {appReleases.length > 0 && (
+        <Reveal delay={0.07} className="mb-10">
+          <SectionTitle title="Notes de version" />
+          <div className="card divide-y divide-[var(--line)] overflow-hidden">
+            {appReleases.map((release) => (
+              <ReleaseRow key={release.id} release={release} open={open === release.id} onToggle={() => setOpen(open === release.id ? null : release.id)} />
+            ))}
+          </div>
+        </Reveal>
+      )}
+
       {appPosts.length > 0 && (
-        <Reveal delay={0.1}>
+        <Reveal delay={0.09}>
           <SectionTitle title="Annonces" />
-          <div className="grid grid-cols-2 gap-5 xl:grid-cols-3">
+          <div className="card divide-y divide-[var(--line)] overflow-hidden">
             {appPosts.map((post) => (
-              <PostCard key={post.id} post={post} />
+              <PostRow key={post.id} post={post} />
             ))}
           </div>
         </Reveal>
@@ -78,39 +92,83 @@ function AppDetail({ app }: { app: PulseApp }) {
 }
 
 export function Apps() {
-  const { apps, appId, appById, go } = usePulse();
+  const { apps, appId, appById, go, pingNow, incidents, snapshot } = usePulse();
   const selected = appId ? appById(appId) : undefined;
+
+  // Ping every configured address when the list opens, then keep it fresh while it stays open.
+  useEffect(() => {
+    if (selected) return;
+    void pingNow();
+    const timer = window.setInterval(() => void pingNow(), 30000);
+    return () => window.clearInterval(timer);
+  }, [selected, pingNow]);
+
   if (selected) return <AppDetail app={selected} />;
+
+  const overall = overallStatus(apps, incidents);
+  const calm = overall.color === "var(--green)" || overall.color === "var(--gray)";
+  const open = incidents.filter((i) => i.phase !== "resolved");
+  const pinged = apps.some((a) => a.check_kind === "http" || a.check_kind === "tcp");
 
   return (
     <>
       <PageHeader title="Applications" />
+
+      {apps.length > 0 && (
+        <Reveal>
+          <div className="mb-8 flex items-center gap-3.5 px-1">
+            <StatusDot color={overall.color} live={!calm} size={10} />
+            <div className="min-w-0">
+              <p className="text-[16px] font-semibold">{overall.title}</p>
+              <p className="text-[13px] text-muted">
+                {overall.detail}
+                {snapshot.fetched_at ? ` Vérifié ${formatRelative(snapshot.fetched_at)}.` : ""}
+              </p>
+            </div>
+          </div>
+        </Reveal>
+      )}
+
+      {open.length > 0 && (
+        <Reveal delay={0.03} className="mb-8">
+          <SectionTitle title="Incidents en cours" />
+          <div className="space-y-3">
+            {open.map((incident) => (
+              <IncidentCard key={incident.id} incident={incident} />
+            ))}
+          </div>
+        </Reveal>
+      )}
+
       {apps.length === 0 ? (
         <div className="card">
-          <Empty icon={<LayoutGrid size={24} />} title="Aucune application" text="Les applications de l'écosystème Nexora apparaîtront ici." />
+          <Empty icon={<LayoutGrid size={22} />} title="Aucune application" text="Les applications de l'écosystème Nexora apparaîtront ici." />
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-5 xl:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3">
           {apps.map((app, index) => (
-            <Reveal key={app.id} delay={Math.min(index * 0.03, 0.2)}>
-              <motion.button
-                onClick={() => go("apps", app.id)}
-                whileHover={{ y: -3 }}
-                whileTap={{ scale: 0.985 }}
-                transition={softSpring}
-                className="card flex h-full w-full items-center gap-4 p-5 text-left hover:shadow-[var(--shadow-hover)]"
-              >
-                <AppIcon app={app} size={68} />
+            <Reveal key={app.id} delay={Math.min(index * 0.02, 0.15)}>
+              <button onClick={() => go("apps", app.id)} className="card flex w-full items-center gap-4 p-4 text-left transition-colors hover:bg-surface-2/60">
+                <AppIcon app={app} size={52} />
                 <span className="min-w-0 flex-1">
-                  <span className="t-headline block truncate">{app.name}</span>
-                  <span className="block truncate text-[13px] text-muted">{app.tagline || (app.version ? `Version ${app.version}` : "Écosystème Nexora")}</span>
-                  <span className="mt-1.5 block">
+                  <span className="block truncate text-[15px] font-semibold">{app.name}</span>
+                  <span className="mt-1 flex items-center gap-3">
                     <AppStatusLabel app={app} />
+                    <LatencyLabel app={app} />
                   </span>
                 </span>
-              </motion.button>
+              </button>
             </Reveal>
           ))}
+        </div>
+      )}
+      {apps.length > 0 && (
+        <div className="mt-3 space-y-1 px-1 text-[12px] text-faint">
+          {pinged && <p>Temps de réponse mesuré depuis cet ordinateur.</p>}
+          <p>
+            Certains services s'arrêtent la nuit (UTC-4) : en semaine à 21h, le week-end à 23h, jusqu'au lendemain matin. Cet arrêt est une routine : il n'est jamais considéré comme une panne, et les services
+            restent comptés comme opérationnels.
+          </p>
         </div>
       )}
     </>

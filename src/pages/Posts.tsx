@@ -42,7 +42,7 @@ export function Posts() {
           <Empty icon={<Megaphone size={24} />} title="Aucune annonce" text="Rien ne correspond à ces filtres pour le moment." />
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-5 xl:grid-cols-3">
+        <div className="grid grid-cols-2 gap-4">
           {shown.map((post, index) => (
             <Reveal key={post.id} delay={Math.min(index * 0.03, 0.2)}>
               <PostCard post={post} />

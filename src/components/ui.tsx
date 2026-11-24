@@ -127,7 +127,7 @@ export function Field({ label, hint, children }: { label: string; hint?: string;
 
 export function PageHeader({ eyebrow, title, children }: { eyebrow?: string; title: string; children?: ReactNode }) {
   return (
-    <header className="mb-7 flex items-end justify-between gap-6">
+    <header className="mb-8 flex items-end justify-between gap-6">
       <div className="min-w-0">
         {eyebrow && <p className="t-eyebrow mb-1">{eyebrow}</p>}
         <h1 className="t-large truncate">{title}</h1>
@@ -139,8 +139,8 @@ export function PageHeader({ eyebrow, title, children }: { eyebrow?: string; tit
 
 export function SectionTitle({ title, action }: { title: string; action?: ReactNode }) {
   return (
-    <div className="mb-3.5 flex items-center justify-between">
-      <h2 className="t-title !text-[21px]">{title}</h2>
+    <div className="mb-3 flex items-center justify-between px-1">
+      <h2 className="text-[17px] font-semibold tracking-[-0.01em]">{title}</h2>
       {action}
     </div>
   );

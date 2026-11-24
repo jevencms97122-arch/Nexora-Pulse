@@ -4,9 +4,9 @@ import { createPortal } from "react-dom";
 import { AppIcon } from "../components/AppIcon";
 import { AppStatusLabel, RichText } from "../components/Content";
 import { Badge, Button, Empty, Field, IconButton, PageHeader, Segmented, Sheet, Switch } from "../components/ui";
-import { api } from "../lib/api";
-import { CHANNEL_LABEL, KIND_META, PHASE_LABEL, SEVERITY_META, STATUS_META, STATUS_ORDER, formatRelative, fromLocalInput, publishLabel, toLocalInput } from "../lib/format";
-import type { AppInput, AppStatus, CoverInput, Incident, IncidentInput, Phase, Post, PostInput, PostKind, PublishState, PulseApp, Release, ReleaseInput, Severity } from "../lib/types";
+import { api, errorText } from "../lib/api";
+import { KIND_META, PHASE_LABEL, SEVERITY_META, STATUS_META, STATUS_ORDER, formatRelative, fromLocalInput, publishLabel, toLocalInput } from "../lib/format";
+import type { AppInput, AppStatus, CheckResult, CoverInput, Incident, IncidentInput, Phase, Post, PostInput, PostKind, PublishState, PulseApp, Release, ReleaseInput, Severity } from "../lib/types";
 import { usePulse } from "../state/pulse";
 
 type Tab = "posts" | "releases" | "apps" | "incidents";
@@ -33,7 +33,7 @@ function AppPicker({ value, onChange }: { value: string[]; onChange: (ids: strin
   );
 }
 
-function ConfirmDelete({ onConfirm, warning }: { onConfirm: () => void; warning?: string }) {
+function ConfirmDelete({ onConfirm, warning, text }: { onConfirm: () => void; warning?: string; text?: string }) {
   const [armed, setArmed] = useState(false);
   useEffect(() => {
     if (!armed) return;
@@ -47,6 +47,10 @@ function ConfirmDelete({ onConfirm, warning }: { onConfirm: () => void; warning?
         Confirmer
       </Button>
     </>
+  ) : text ? (
+    <Button variant="danger" onClick={() => setArmed(true)}>
+      <Trash2 size={14} /> {text}
+    </Button>
   ) : (
     <IconButton label="Supprimer" onClick={() => setArmed(true)}>
       <Trash2 size={14} />
@@ -249,7 +253,7 @@ function ReleaseEditor({ initial, onClose }: { initial: Release | "new"; onClose
   const set = <K extends keyof ReleaseInput>(key: K, value: ReleaseInput[K]) => setForm((f) => ({ ...f, [key]: value }));
   const save = async (state: PublishState) => {
     setBusy(true);
-    const ok = await run(() => api.saveRelease({ ...form, state }), state === "draft" ? "Brouillon enregistré" : "Version publiée");
+    const ok = await run(() => api.saveRelease({ ...form, state }), state === "draft" ? "Brouillon enregistré" : "Mise à jour publiée");
     setBusy(false);
     if (ok) onClose();
   };
@@ -258,7 +262,7 @@ function ReleaseEditor({ initial, onClose }: { initial: Release | "new"; onClose
     <Sheet
       open
       onClose={onClose}
-      title={initial === "new" ? "Nouvelle version" : "Modifier la version"}
+      title={initial === "new" ? "Nouvelle mise à jour" : "Modifier la mise à jour"}
       footer={
         <>
           <Button variant="secondary" disabled={busy || !valid} onClick={() => void save("draft")}>
@@ -284,16 +288,10 @@ function ReleaseEditor({ initial, onClose }: { initial: Release | "new"; onClose
           <Field label="Version">
             <input className="field" placeholder="1.2.0" value={form.version} autoFocus onChange={(e) => set("version", e.target.value)} />
           </Field>
-          <Field label="Canal">
-            <select className="field" value={form.channel} onChange={(e) => set("channel", e.target.value as ReleaseInput["channel"])}>
-              <option value="stable">{CHANNEL_LABEL.stable}</option>
-              <option value="beta">{CHANNEL_LABEL.beta}</option>
-            </select>
-          </Field>
-          <Field label="Date de sortie">
-            <input className="field" type="datetime-local" value={toLocalInput(form.released_at)} onChange={(e) => set("released_at", fromLocalInput(e.target.value) || form.released_at)} />
-          </Field>
         </div>
+        <Field label="Date de sortie">
+          <input className="field" type="datetime-local" value={toLocalInput(form.released_at)} onChange={(e) => set("released_at", fromLocalInput(e.target.value) || form.released_at)} />
+        </Field>
         <Field label="Titre">
           <input className="field" value={form.title} maxLength={160} onChange={(e) => set("title", e.target.value)} />
         </Field>
@@ -306,34 +304,34 @@ function ReleaseEditor({ initial, onClose }: { initial: Release | "new"; onClose
 }
 
 function ReleasesPanel() {
-  const { snapshot, run, appById } = usePulse();
+  const { snapshot, run } = usePulse();
   const [editing, setEditing] = useState<Release | "new" | null>(null);
   const releases = [...snapshot.releases].sort((a, b) => b.released_at.localeCompare(a.released_at));
   return (
     <Panel
       action={
         <Button disabled={snapshot.apps.length === 0} onClick={() => setEditing("new")}>
-          <Plus size={15} /> Nouvelle version
+          <Plus size={15} /> Nouvelle mise à jour
         </Button>
       }
     >
-      {releases.length === 0 && <Empty icon={<PackagePlus size={24} />} title="Aucune version" text="Publie les notes de version de tes applis." />}
+      {releases.length === 0 && <Empty icon={<PackagePlus size={24} />} title="Aucune mise à jour" text="Publie les mises à jour de tes applis." />}
       {releases.map((release) => {
         const label = publishLabel(release.state, release.released_at);
-        const app = appById(release.app);
+        const app = snapshot.apps.find((a) => a.id === release.app);
         return (
           <ListRow
             key={release.id}
             leading={<AppIcon app={app} size={36} />}
             title={`${app?.name ?? "Application"} ${release.version}`}
-            detail={release.title || CHANNEL_LABEL[release.channel]}
+            detail={release.title || "Mise à jour"}
             badges={<Badge color={stateColor(release.state, label)}>{label}</Badge>}
             actions={
               <>
                 <IconButton label="Modifier" onClick={() => setEditing(release)}>
                   <Pencil size={14} />
                 </IconButton>
-                <ConfirmDelete onConfirm={() => void run(() => api.deleteRecord("pulse_releases", release.id), "Version supprimée")} />
+                <ConfirmDelete onConfirm={() => void run(() => api.deleteRecord("pulse_releases", release.id), "Mise à jour supprimée")} />
               </>
             }
           />
@@ -348,11 +346,24 @@ function AppEditor({ initial, onClose }: { initial: PulseApp | "new"; onClose: (
   const { run, snapshot } = usePulse();
   const [form, setForm] = useState<AppInput>(() =>
     initial === "new"
-      ? { name: "", tagline: "", accent: "#0a84ff", store_id: "", status: "unknown", status_message: "", sort: (snapshot.apps.at(-1)?.sort ?? 0) + 10, visible: true }
-      : { id: initial.id, name: initial.name, tagline: initial.tagline, accent: initial.accent, store_id: initial.store_id, status: initial.status, status_message: initial.status_message, sort: initial.sort, visible: initial.visible },
+      ? { name: "", tagline: "", accent: "#0a84ff", store_id: "", status: "unknown", status_message: "", sort: (snapshot.apps.at(-1)?.sort ?? 0) + 10, visible: true, check_kind: "none", check_target: "" }
+      : { id: initial.id, name: initial.name, tagline: initial.tagline, accent: initial.accent, store_id: initial.store_id, status: initial.status, status_message: initial.status_message, sort: initial.sort, visible: initial.visible, check_kind: initial.check_kind || "none", check_target: initial.check_target },
   );
   const [busy, setBusy] = useState(false);
-  const set = <K extends keyof AppInput>(key: K, value: AppInput[K]) => setForm((f) => ({ ...f, [key]: value }));
+  const [test, setTest] = useState<{ testing: boolean; result?: CheckResult; error?: string }>({ testing: false });
+  const set = <K extends keyof AppInput>(key: K, value: AppInput[K]) => {
+    setForm((f) => ({ ...f, [key]: value }));
+    if (key === "check_kind" || key === "check_target") setTest({ testing: false });
+  };
+  const runTest = async () => {
+    if (form.check_kind === "none") return;
+    setTest({ testing: true });
+    try {
+      setTest({ testing: false, result: await api.testCheck(form.check_kind, form.check_target) });
+    } catch (e) {
+      setTest({ testing: false, error: errorText(e) });
+    }
+  };
   const save = async () => {
     setBusy(true);
     const ok = await run(() => api.saveApp(form), "Application mise à jour");
@@ -365,9 +376,27 @@ function AppEditor({ initial, onClose }: { initial: PulseApp | "new"; onClose: (
       onClose={onClose}
       title={initial === "new" ? "Nouvelle application" : form.name}
       footer={
-        <Button disabled={busy || !form.name.trim()} onClick={() => void save()}>
-          Enregistrer
-        </Button>
+        <>
+          {initial !== "new" && (
+            <div className="mr-auto flex items-center gap-2">
+              <ConfirmDelete
+                text="Supprimer l'application"
+                warning={(() => {
+                  const versions = snapshot.releases.filter((r) => r.app === initial.id).length;
+                  return versions > 0 ? `Supprime aussi ${versions} version${versions > 1 ? "s" : ""}. Irréversible.` : "Irréversible.";
+                })()}
+                onConfirm={() =>
+                  void run(() => api.deleteApp(initial.id), "Application supprimée").then((ok) => {
+                    if (ok) onClose();
+                  })
+                }
+              />
+            </div>
+          )}
+          <Button disabled={busy || !form.name.trim()} onClick={() => void save()}>
+            Enregistrer
+          </Button>
+        </>
       }
     >
       <div className="space-y-4 px-6 pb-6">
@@ -394,6 +423,47 @@ function AppEditor({ initial, onClose }: { initial: PulseApp | "new"; onClose: (
         <Field label="Message d'état">
           <input className="field" value={form.status_message} maxLength={280} placeholder="Facultatif" onChange={(e) => set("status_message", e.target.value)} />
         </Field>
+        <div className="space-y-3 rounded-2xl bg-surface-2 p-4">
+          <div>
+            <p className="text-[13.5px] font-semibold">Surveillance automatique</p>
+            <p className="text-[12px] text-muted">Quand quelqu'un ouvre l'onglet État, l'application teste cette adresse et affiche le temps de réponse en millisecondes.</p>
+          </div>
+          <Field label="Type de test">
+            <select className="field" value={form.check_kind} onChange={(e) => set("check_kind", e.target.value as AppInput["check_kind"])}>
+              <option value="none">Aucun</option>
+              <option value="http">Site ou API (HTTP)</option>
+              <option value="tcp">Serveur de jeu ou port (TCP)</option>
+            </select>
+          </Field>
+          {form.check_kind !== "none" && (
+            <Field label="Adresse à tester" hint={form.check_kind === "http" ? "Par exemple http://92.49.99.59:8096/api/health" : "Par exemple 92.49.99.59:25565"}>
+              <input className="field" value={form.check_target} maxLength={300} placeholder={form.check_kind === "http" ? "https://..." : "hôte:port"} onChange={(e) => set("check_target", e.target.value)} />
+            </Field>
+          )}
+          {form.check_kind !== "none" && (
+            <div className="flex items-center gap-3">
+              <Button variant="secondary" disabled={test.testing || !form.check_target.trim()} onClick={() => void runTest()}>
+                {test.testing ? "Test en cours..." : "Tester maintenant"}
+              </Button>
+              {test.result && (
+                <p role="status" className="min-w-0 text-[12.5px] font-medium" style={{ color: test.result.ok ? "var(--green)" : "var(--red)" }}>
+                  {test.result.ok ? "En ligne" : "Hors ligne"} · {test.result.detail} · {test.result.latency_ms} ms
+                </p>
+              )}
+              {test.error && (
+                <p role="alert" className="min-w-0 text-[12.5px] font-medium text-[var(--red)]">
+                  {test.error}
+                </p>
+              )}
+            </div>
+          )}
+          {initial !== "new" && initial.checked_at && (
+            <p className="text-[12px] text-muted">
+              Dernier test {formatRelative(initial.checked_at)} : {initial.check_ok ? "en ligne" : "hors ligne"}
+              {initial.check_latency ? ` (${initial.check_latency} ms)` : ""}
+            </p>
+          )}
+        </div>
         <label className="flex items-center justify-between text-[13.5px] font-medium">
           Visible dans l'application <Switch label="Visible" checked={form.visible} onChange={(visible) => set("visible", visible)} />
         </label>
@@ -424,7 +494,7 @@ function AppsPanel() {
           key={app.id}
           leading={<AppIcon app={app} size={36} />}
           title={app.name}
-          detail={app.status_message || app.tagline || (app.version ? `Version ${app.version}` : undefined)}
+          detail={app.check_kind === "http" || app.check_kind === "tcp" ? `Testée · ${app.status_message || app.check_target}` : app.status_message || app.tagline || (app.version ? `Version ${app.version}` : undefined)}
           badges={
             <>
               {!app.visible && <Badge>Masquée</Badge>}
@@ -611,7 +681,7 @@ export function Studio() {
           onChange={setTab}
           options={[
             { value: "posts", label: "Annonces" },
-            { value: "releases", label: "Versions" },
+            { value: "releases", label: "Mises à jour" },
             { value: "apps", label: "États" },
             { value: "incidents", label: "Incidents" },
           ]}

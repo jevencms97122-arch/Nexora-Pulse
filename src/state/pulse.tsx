@@ -1,9 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { api, errorText, onEvent } from "../lib/api";
 import { postIsLive, releaseIsLive } from "../lib/format";
-import type { AppInfo, Editor, Page, Post, Prefs, PulseApp, Release, Snapshot, UpdateInfo } from "../lib/types";
+import type { AppInfo, Editor, Incident, Page, Ping, Post, Prefs, PulseApp, Release, Snapshot, UpdateInfo, UptimeDay } from "../lib/types";
 
-const EMPTY: Snapshot = { apps: [], posts: [], releases: [], incidents: [], online: false, live: false, setup_required: false, fetched_at: "" };
+const EMPTY: Snapshot = { apps: [], uptime: [], posts: [], releases: [], incidents: [], online: false, live: false, setup_required: false, fetched_at: "" };
 const DEFAULT_PREFS: Prefs = { notifications: true, muted_apps: [], close_to_tray: true, autostart: false };
 
 export interface Toast {
@@ -18,6 +18,11 @@ interface PulseValue {
   /** Published content only, even for a signed-in editor. */
   posts: Post[];
   releases: Release[];
+  incidents: Incident[];
+  uptime: UptimeDay[];
+  /** Live response times, by app id. */
+  pings: Record<string, Ping>;
+  pingNow: () => Promise<void>;
   apps: PulseApp[];
   appById: (id: string) => PulseApp | undefined;
   editor: Editor | null;
@@ -57,6 +62,21 @@ export function PulseProvider({ children }: { children: ReactNode }) {
   const [loginOpen, setLoginOpen] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const nextToast = useRef(1);
+  const [pings, setPings] = useState<Record<string, Ping>>({});
+  const pinging = useRef(false);
+
+  const pingNow = useCallback(async () => {
+    if (pinging.current) return;
+    pinging.current = true;
+    try {
+      const list = await api.pingApps();
+      setPings(Object.fromEntries(list.map((p) => [p.app, p])));
+    } catch {
+      /* no answer: nothing is displayed */
+    } finally {
+      pinging.current = false;
+    }
+  }, []);
 
   const toast = useCallback((text: string, tone: Toast["tone"] = "ok") => {
     const id = nextToast.current++;
@@ -156,18 +176,29 @@ export function PulseProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<PulseValue>(() => {
+    // A hidden app disappears everywhere in the public screens: its versions, and its name on posts.
     const apps = snapshot.apps.filter((a) => a.visible);
+    const visibleIds = new Set(apps.map((a) => a.id));
     const posts = snapshot.posts
       .filter(postIsLive)
+      .map((p) => ({ ...p, apps: p.apps.filter((id) => visibleIds.has(id)) }))
       .sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.publish_at.localeCompare(a.publish_at));
-    const releases = snapshot.releases.filter(releaseIsLive).sort((a, b) => b.released_at.localeCompare(a.released_at));
+    const releases = snapshot.releases
+      .filter((r) => releaseIsLive(r) && visibleIds.has(r.app))
+      .sort((a, b) => b.released_at.localeCompare(a.released_at));
+    // Incidents that only concern hidden apps are hidden too.
+    const incidents = snapshot.incidents.filter((i) => i.apps.length === 0 || i.apps.some((id) => visibleIds.has(id)));
     return {
       snapshot,
       loaded,
       posts,
       releases,
+      incidents,
+      uptime: (snapshot.uptime ?? []).filter((u) => visibleIds.has(u.app)),
+      pings,
+      pingNow,
       apps,
-      appById: (id) => snapshot.apps.find((a) => a.id === id),
+      appById: (id) => apps.find((a) => a.id === id),
       editor,
       info,
       prefs,
@@ -188,7 +219,7 @@ export function PulseProvider({ children }: { children: ReactNode }) {
       savePrefs,
       setUpdate,
     };
-  }, [snapshot, loaded, editor, info, prefs, update, page, appId, postId, loginOpen, toasts, go, toast, refresh, run, login, logout, savePrefs]);
+  }, [pings, pingNow, snapshot, loaded, editor, info, prefs, update, page, appId, postId, loginOpen, toasts, go, toast, refresh, run, login, logout, savePrefs]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

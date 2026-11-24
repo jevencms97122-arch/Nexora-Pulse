@@ -11,6 +11,7 @@ pub const STATUSES: [&str; 6] = [
 pub const POST_KINDS: [&str; 4] = ["announcement", "news", "event", "maintenance"];
 pub const PUBLISH_STATES: [&str; 2] = ["draft", "published"];
 pub const CHANNELS: [&str; 2] = ["stable", "beta"];
+pub const CHECK_KINDS: [&str; 3] = ["none", "http", "tcp"];
 pub const SEVERITIES: [&str; 3] = ["minor", "major", "critical"];
 pub const PHASES: [&str; 4] = ["investigating", "identified", "monitoring", "resolved"];
 
@@ -28,6 +29,12 @@ pub struct App {
     pub sort: i64,
     pub visible: bool,
     pub updated: String,
+    // Automatic monitoring, written by pulse-monitor.
+    pub check_kind: String,
+    pub check_target: String,
+    pub check_ok: bool,
+    pub check_latency: i64,
+    pub checked_at: String,
     // Filled from the Nexora Store catalog.
     pub version: String,
     pub icon_url: String,
@@ -94,10 +101,22 @@ pub struct Incident {
     pub updates: Vec<IncidentUpdate>,
 }
 
+/// Checks counted for one app on one UTC day.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct UptimeDay {
+    pub app: String,
+    pub day: String,
+    pub ok: f64,
+    pub total: f64,
+    pub latency_sum: f64,
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Snapshot {
     pub apps: Vec<App>,
+    pub uptime: Vec<UptimeDay>,
     pub posts: Vec<Post>,
     pub releases: Vec<Release>,
     pub incidents: Vec<Incident>,
@@ -168,10 +187,22 @@ pub fn public_view(snapshot: &Snapshot) -> Snapshot {
     let at = now();
     let mut out = snapshot.clone();
     out.apps.retain(|a| a.visible);
+    let visible: Vec<String> = out.apps.iter().map(|a| a.id.clone()).collect();
+    out.uptime.retain(|u| visible.contains(&u.app));
     out.posts
         .retain(|p| p.state == "published" && !p.publish_at.is_empty() && p.publish_at <= at);
-    out.releases
-        .retain(|r| r.state == "published" && !r.released_at.is_empty() && r.released_at <= at);
+    // A hidden app disappears with everything that mentions it.
+    out.releases.retain(|r| {
+        r.state == "published"
+            && !r.released_at.is_empty()
+            && r.released_at <= at
+            && visible.contains(&r.app)
+    });
+    for post in &mut out.posts {
+        post.apps.retain(|id| visible.contains(id));
+    }
+    out.incidents
+        .retain(|i| i.apps.is_empty() || i.apps.iter().any(|id| visible.contains(id)));
     out
 }
 

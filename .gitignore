@@ -13,3 +13,6 @@ src-tauri/gen/schemas/
 *.key
 *.key.pub
 *.key.password
+monitor/target/
+monitor/lancer-monitor.cmd
+!.env.example

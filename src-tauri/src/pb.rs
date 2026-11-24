@@ -64,6 +64,17 @@ impl Pb {
         sort: &str,
         token: Option<&str>,
     ) -> Result<Vec<T>> {
+        self.list_filtered(collection, sort, "", token).await
+    }
+
+    /// Every record matching a PocketBase filter (empty filter = everything).
+    pub async fn list_filtered<T: DeserializeOwned>(
+        &self,
+        collection: &str,
+        sort: &str,
+        filter: &str,
+        token: Option<&str>,
+    ) -> Result<Vec<T>> {
         let mut out = Vec::new();
         let mut page = 1u32;
         loop {
@@ -71,6 +82,7 @@ impl Pb {
                 ("page", page.to_string()),
                 ("perPage", "200".to_string()),
                 ("sort", sort.to_string()),
+                ("filter", filter.to_string()),
                 ("skipTotal", "0".to_string()),
             ];
             let req = Self::authed(self.http.get(self.records(collection)).query(&query), token);

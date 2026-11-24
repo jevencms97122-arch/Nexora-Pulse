@@ -6,6 +6,7 @@ mod error;
 mod markdown;
 mod models;
 mod pb;
+mod ping;
 mod state;
 mod sync;
 mod updater;
@@ -134,9 +135,15 @@ fn set_prefs(app: AppHandle, state: State<'_, AppState>, prefs: Prefs) -> Result
 pub fn run() {
     let hidden_arg = std::env::args().any(|a| a == HIDDEN_ARG);
 
-    tauri::Builder::default()
-        // Must stay first: a second launch only brings the running window forward.
-        .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| show_main(app)))
+    let mut builder = tauri::Builder::default();
+    // Must stay first: a second launch only brings the running window forward.
+    // Skipped in dev builds, so `npm run tauri dev` always opens the dev version
+    // even when the installed app is running in the tray.
+    if !cfg!(debug_assertions) {
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| show_main(app)));
+    }
+
+    builder
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -148,6 +155,8 @@ pub fn run() {
             let handle = app.handle().clone();
             let dir = match config::dev_data_dir() {
                 Some(dir) => dir,
+                // Dev builds keep their own cache, apart from the installed app.
+                None if cfg!(debug_assertions) => app.path().app_data_dir()?.join("dev"),
                 None => app.path().app_data_dir()?,
             };
             std::fs::create_dir_all(&dir)?;
@@ -228,6 +237,8 @@ pub fn run() {
             admin::update_incident,
             admin::delete_record,
             admin::delete_app,
+            admin::test_check,
+            ping::ping_apps,
             admin::render_markdown,
             updater::update_status,
             updater::update_check,

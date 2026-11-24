@@ -12,7 +12,6 @@ import { Apps } from "./pages/Apps";
 import { Posts } from "./pages/Posts";
 import { Releases } from "./pages/Releases";
 import { Settings } from "./pages/Settings";
-import { Status } from "./pages/Status";
 import { Studio } from "./pages/Studio";
 import { Today } from "./pages/Today";
 import { usePulse } from "./state/pulse";
@@ -104,7 +103,7 @@ function Toasts() {
   );
 }
 
-const PAGES = { today: Today, posts: Posts, releases: Releases, status: Status, apps: Apps, settings: Settings, studio: Studio };
+const PAGES = { today: Today, posts: Posts, releases: Releases, apps: Apps, settings: Settings, studio: Studio };
 
 export default function App() {
   const { page, appId, loaded } = usePulse();
@@ -134,7 +133,7 @@ export default function App() {
       <main className="main-pane relative min-w-0 flex-1">
         <TitleBar />
         <div ref={scroller} className="scroll h-full">
-          <div className="mx-auto max-w-[1180px] px-10 pt-14 pb-12">
+          <div className="mx-auto max-w-[920px] px-12 pt-16 pb-16">
             <ConnectionBanner />
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
