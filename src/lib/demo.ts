@@ -197,6 +197,9 @@ export function demoCall(command: string, args: Record<string, any> = {}): unkno
       };
       return snapshot;
     }
+    case "delete_app":
+      snapshot = { ...snapshot, apps: snapshot.apps.filter((a) => a.id !== args.id), releases: snapshot.releases.filter((r) => r.app !== args.id) };
+      return snapshot;
     case "delete_record": {
       const key = args.collection === "pulse_posts" ? "posts" : args.collection === "pulse_releases" ? "releases" : "incidents";
       snapshot = { ...snapshot, [key]: (snapshot[key] as { id: string }[]).filter((r) => r.id !== args.id) };

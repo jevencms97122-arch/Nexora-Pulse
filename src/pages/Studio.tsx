@@ -33,17 +33,20 @@ function AppPicker({ value, onChange }: { value: string[]; onChange: (ids: strin
   );
 }
 
-function ConfirmDelete({ onConfirm }: { onConfirm: () => void }) {
+function ConfirmDelete({ onConfirm, warning }: { onConfirm: () => void; warning?: string }) {
   const [armed, setArmed] = useState(false);
   useEffect(() => {
     if (!armed) return;
-    const timer = window.setTimeout(() => setArmed(false), 3500);
+    const timer = window.setTimeout(() => setArmed(false), warning ? 6000 : 3500);
     return () => window.clearTimeout(timer);
-  }, [armed]);
+  }, [armed, warning]);
   return armed ? (
-    <Button variant="danger" className="!h-8 !px-3" onClick={onConfirm}>
-      Confirmer
-    </Button>
+    <>
+      {warning && <span className="max-w-[260px] text-right text-[12px] leading-tight font-medium text-[var(--red)]">{warning}</span>}
+      <Button variant="danger" className="!h-8 !px-3" onClick={onConfirm}>
+        Confirmer
+      </Button>
+    </>
   ) : (
     <IconButton label="Supprimer" onClick={() => setArmed(true)}>
       <Trash2 size={14} />
@@ -429,9 +432,18 @@ function AppsPanel() {
             </>
           }
           actions={
-            <IconButton label="Modifier" onClick={() => setEditing(app)}>
-              <Pencil size={14} />
-            </IconButton>
+            <>
+              <IconButton label="Modifier" onClick={() => setEditing(app)}>
+                <Pencil size={14} />
+              </IconButton>
+              <ConfirmDelete
+                warning={(() => {
+                  const versions = snapshot.releases.filter((r) => r.app === app.id).length;
+                  return versions > 0 ? `Supprime aussi ${versions} version${versions > 1 ? "s" : ""}. Irréversible.` : "Irréversible.";
+                })()}
+                onConfirm={() => void run(() => api.deleteApp(app.id), "Application supprimée")}
+              />
+            </>
           }
         />
       ))}

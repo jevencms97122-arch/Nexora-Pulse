@@ -324,6 +324,22 @@ pub async fn delete_record(
     Ok(sync::refresh(&app).await)
 }
 
+/// Deletes an app together with its versions: PocketBase refuses to remove an app
+/// that a release still points to. Posts and incidents only lose the reference.
+#[tauri::command]
+pub async fn delete_app(app: AppHandle, state: State<'_, AppState>, id: String) -> Result<Snapshot> {
+    let token = fresh_token(&state).await?;
+    let releases = state
+        .pb
+        .list_all::<Release>("pulse_releases", "created", Some(&token))
+        .await?;
+    for release in releases.iter().filter(|r| r.app == id) {
+        state.pb.delete("pulse_releases", &release.id, &token).await?;
+    }
+    state.pb.delete("pulse_apps", &id, &token).await?;
+    Ok(sync::refresh(&app).await)
+}
+
 #[tauri::command]
 pub fn render_markdown(text: String) -> String {
     markdown::to_html(&text)

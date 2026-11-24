@@ -44,6 +44,7 @@ export const api = {
   updateIncident: (id: string, phase: Phase, message: string) => call<Snapshot>("update_incident", { id, phase, message }),
   deleteRecord: (collection: "pulse_posts" | "pulse_releases" | "pulse_incidents", id: string) =>
     call<Snapshot>("delete_record", { collection, id }),
+  deleteApp: (id: string) => call<Snapshot>("delete_app", { id }),
   renderMarkdown: (text: string) => call<string>("render_markdown", { text }),
   updateStatus: () => call<UpdateInfo | null>("update_status"),
   updateCheck: () => call<void>("update_check"),

@@ -227,6 +227,7 @@ pub fn run() {
             admin::open_incident,
             admin::update_incident,
             admin::delete_record,
+            admin::delete_app,
             admin::render_markdown,
             updater::update_status,
             updater::update_check,
